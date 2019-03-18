@@ -1,0 +1,96 @@
+var express = require('express')
+var Unblocker = require('unblocker');
+var app = express();
+
+// this must be one of the first app.use() calls and must not be on a subdirectory to work properly
+app.use(new Unblocker({prefix: '/proxy/'}));
+
+app.get('/', function(req, res) {
+    //...
+});
+
+{
+    prefix: '/proxy/',  // Path that the proxied URLs begin with. '/' is not recommended due to a few edge cases.
+    host: null, // Host used in redirects (e.g `example.com` or `localhost:8080`). Default behavior is to determine this from the request headers.
+    requestMiddleware: [], // Array of functions that perform extra processing on client requests before they are sent to the remote server. API is detailed below.
+    responseMiddleware: [], // Array of functions that perform extra processing on remote responses before they are sent back to the client. API is detailed below.
+    standardMiddleware: true, // Allows you to disable all built-in middleware if you need to perform advanced customization of requests or responses.
+    processContentTypes: [ // All  built-in middleware that modifies the content of responses limits itself to these content-types.
+        'text/html',
+        'application/xml+xhtml',
+        'application/xhtml+xml',
+        'text/css'
+    ],
+    httpAgent: null, //override agent used to request http response from server. see https://nodejs.org/api/http.html#http_class_http_agent
+    httpsAgent: null //override agent used to request https response from server. see https://nodejs.org/api/https.html#https_class_https_agent
+}
+{
+    url: 'http://example.com/',
+    clientRequest: {request},
+    clientResponse: {response},
+    headers: {
+        //...
+    },
+    stream: {ReadableStream of data for PUT/POST requests, empty stream for other types}
+}
+function validateRequest(data) {
+    if (!data.url.match(/^https?:\/\/en.wikipedia.org\//) {
+        data.clientResponse.status(403).send('Wikipedia only.');
+    }
+}
+var config = {
+    requestMiddleware: [
+        validateRequest
+    ]
+}
+var Unblocker = require('unblocker');
+
+var config = {
+    prefix: '/proxy/',
+    host: null,
+    requestMiddleware: [],
+    responseMiddleware: [],
+    standardMiddleware: false,  // disables all built-in middleware
+    processContentTypes: [
+        'text/html',
+        'application/xml+xhtml',
+        'application/xhtml+xml'
+    ]
+}
+
+var host = Unblocker.host(config);
+var referer = Unblocker.referer(config);
+var cookies = Unblocker.cookies(config);
+var hsts = Unblocker.hsts(config);
+var hpkp = Unblocker.hpkp(config);
+var csp = Unblocker.csp(config);
+var redirects = Unblocker.redirects(config);
+var decompress = Unblocker.decompress(config);
+var charsets = Unblocker.charsets(config);
+var urlPrefixer = Unblocker.urlPrefixer(config);
+var metaRobots = Unblocker.metaRobots(config);
+var contentLength = Unblocker.contentLength(config);
+
+config.requestMiddleware = [
+    host,
+    referer,
+    decompress.handleRequest,
+    cookies.handleRequest
+    // custom requestMiddleware here
+];
+
+config.responseMiddleware = [
+    hsts,
+    hpkp,
+    csp,
+    redirects,
+    decompress.handleResponse,
+    charsets,
+    urlPrefixer,
+    cookies.handleResponse,
+    metaRobots,
+    // custom responseMiddleware here
+    contentLength
+];
+
+app.use(new Unblocker(config));
